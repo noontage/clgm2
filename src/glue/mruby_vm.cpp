@@ -1,13 +1,17 @@
 #include <glue/mruby_vm.h>
+#include <glue/mruby_impl.h>
 namespace CLGM2
 {
+
+Hash<mrb_state *, MRB *> MRB::Tbl;
 
 //
 // constructor
 //
-MRuby::MRuby()
+MRB::MRB()
 {
   mrb = mrb_open();
+  Tbl[mrb] = this;
   // ----------- ARENA BEGN  -----------
   int ai = mrb_gc_arena_save(mrb);
   initialize();
@@ -19,22 +23,16 @@ MRuby::MRuby()
 //
 // destructor
 //
-MRuby::~MRuby()
+MRB::~MRB()
 {
   mrb_close(mrb);
-}
-
-//
-// initialize
-//
-void MRuby::initialize()
-{
+  Tbl.erase(mrb);
 }
 
 //
 // exec_script
 //
-bool MRuby::exec_script(const String &f)
+bool MRB::exec_script(const String &f)
 {
   // loadfile
   FILE *mrb_file;
@@ -64,7 +62,7 @@ bool MRuby::exec_script(const String &f)
   return true;
 }
 
-bool MRuby::is_error()
+bool MRB::is_error()
 {
   if (mrb->exc)
   {
@@ -73,6 +71,14 @@ bool MRuby::is_error()
     return true;
   }
   return false;
+}
+
+//
+// initialize
+//
+void MRB::initialize()
+{
+  MRubyImpl::initialize(mrb);
 }
 
 } // namespace CLGM2

@@ -1,0 +1,10 @@
+{
+  "app": {
+    "name": "Server",
+    "boot": "boot.rb"
+  },
+  "net": {
+    "port": 3000,
+    "data_receive_rate": 60
+  }
+}

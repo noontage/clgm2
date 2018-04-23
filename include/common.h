@@ -11,6 +11,11 @@
 #include <unordered_map>
 #include <vector>
 
+//
+// mruby
+//
+#include <mruby.h>
+
 namespace CLGM2
 {
 

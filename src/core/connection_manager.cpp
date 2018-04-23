@@ -48,7 +48,14 @@ ConnectionManager::ConnectionManager()
 
     if (cb_disconnect)
     {
-      cb_disconnect(connection, code, String(message));
+      if (length == 0)
+      {
+        cb_disconnect(connection, code, "");
+      }
+      else
+      {
+        cb_disconnect(connection, code, String(message).substr(0, length));
+      }
     }
 
     // remove connection from all channel
@@ -116,19 +123,19 @@ void ConnectionManager::listen(uint16_t port)
 //
 // event listtener
 //
-void ConnectionManager::set_listner_on_connect(Function<void(Sptr<Connection>)> cb)
-{
-  cb_connect = cb;
-}
-
-void ConnectionManager::set_listner_on_disconnect(Function<void(Sptr<Connection>, int, String)> cb)
-{
-  cb_disconnect = cb;
-}
-
-void ConnectionManager::set_listner_on_message(Function<void(Sptr<Connection>, const String &)> cb)
-{
-  cb_message = cb;
-}
+// void ConnectionManager::set_listner_on_connect(Function<void(Sptr<Connection>)> cb)
+// {
+//   cb_connect = cb;
+// }
+//
+// void ConnectionManager::set_listner_on_disconnect(Function<void(Sptr<Connection>, int, String)> cb)
+// {
+//   cb_disconnect = cb;
+// }
+//
+// void ConnectionManager::set_listner_on_message(Function<void(Sptr<Connection>, const String &)> cb)
+// {
+//   cb_message = cb;
+// }
 
 } // namespace CLGM2
