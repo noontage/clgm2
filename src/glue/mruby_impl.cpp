@@ -4,6 +4,7 @@
 #include <core/connection.h>
 #include <core/connection_manager.h>
 #include <core/channel.h>
+#include <core/timer.h>
 
 namespace CLGM2
 {
@@ -29,6 +30,14 @@ mrb_value rbf_event_on(mrb_state *mrb, mrb_value self)
   // registered
   mrb_gc_register(mrb, block); //  GC protect 'block'
   MRB::Tbl[mrb]->rb_core_event_proc[sym] = block;
+  return self;
+}
+
+mrb_value rbf_sleep(mrb_state *mrb, mrb_value self)
+{
+  mrb_int st;
+  mrb_get_args(mrb, "i", &st);
+  Timer::sleep_s(st);
   return self;
 }
 
@@ -173,7 +182,7 @@ void initialize(mrb_state *mrb)
   // Core
   auto KCore = mrb_define_module(mrb, "CLGM2");
   mrb_define_class_method(mrb, KCore, "event_on", rbf_event_on, MRB_ARGS_REQ(2));
-  // mrb_define_class_method(mrb, KCore, "sleep", rb_sleep, MRB_ARGS_REQ(1));
+  mrb_define_class_method(mrb, KCore, "sleep", rbf_sleep, MRB_ARGS_REQ(1));
   // mrb_define_class_method(mrb, KCore, "fullgc", rb_fullgc, MRB_ARGS_NONE());
   // mrb_define_class_method(mrb, KCore, "shutdown", rb_shutdown, MRB_ARGS_NONE());
 

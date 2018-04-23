@@ -29,6 +29,10 @@ int main()
     cm->listen(3000);
   });
 
-  vm->exec_script("boot.rb");
-  th_net.join();
+  if (vm->exec_script("boot.rb"))
+  {
+    th_net.join();
+  }
+
+  exit(1);
 }
