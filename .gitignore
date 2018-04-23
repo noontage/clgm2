@@ -1,0 +1,12 @@
+# Build file
+*.o
+*.dSYM
+
+# Build
+.vs/
+build/*
+build-arm/*
+
+# Other
+tmp/
+.DS_Store
