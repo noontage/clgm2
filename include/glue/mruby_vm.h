@@ -9,6 +9,8 @@
 #include <mruby/data.h>
 #include <mruby/string.h>
 #include <mruby/variable.h>
+#include <mruby/hash.h>
+
 namespace CLGM2
 {
 
@@ -35,9 +37,6 @@ struct MRB
   //  custon 'Connection' ruby class
   mrb_value custom_connection_class;
 
-  // Klass
-  RClass *KCore;
-
   //
   // constant data type
   //
@@ -48,7 +47,9 @@ struct MRB
   //
   static Hash<mrb_state *, MRB *> Tbl;
   Hash<mrb_sym, mrb_value> rb_core_event_proc;
+  RClass *KCore;
   RClass *KConnection;
+  RClass *KChannel;
 
   //
   // obj_new

@@ -47,7 +47,7 @@ const uint32_t SECOUND_US = 1000000;
 //
 namespace Config
 {
-const uint64_t net_data_receive_rate = 1; //  60update per second
+const uint64_t net_data_receive_rate = 60; //  60update per second
 }
 
 } // namespace CLGM2

@@ -7,11 +7,12 @@ namespace CLGM2
 
 class Channel
 {
-  String name;
   Array<Sptr<Connection>> connections;
   static Array<Channel *> channels;
 
 public:
+  String name;
+
   Channel();
   Channel(const String &n);
   ~Channel();
