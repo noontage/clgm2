@@ -48,7 +48,7 @@ file(GLOB SOURCES ${DIR_UWS}/src/*.cpp)
 add_library(uWS STATIC ${SOURCES})
 
 # main
-file(GLOB SOURCES src/*.cpp src/core/*.cpp)
+file(GLOB SOURCES src/*.cpp src/core/*.cpp src/util/*.cpp src/glue/*.cpp)
 add_executable(${APP_NAME} ${SOURCES})
 add_dependencies(${APP_NAME} uWS mruby)
 

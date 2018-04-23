@@ -40,6 +40,11 @@
     "thread": "cpp",
     "tuple": "cpp",
     "utility": "cpp",
-    "chrono": "cpp"
+    "chrono": "cpp",
+    "atomic": "cpp",
+    "functional": "cpp",
+    "limits": "cpp",
+    "ratio": "cpp",
+    "type_traits": "cpp"
   }
 }

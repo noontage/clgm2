@@ -4,6 +4,10 @@
 namespace CLGM2
 {
 
+//
+// constructor
+//
+
 ConnectionManager::ConnectionManager()
 {
   auto h = new uWS::Hub();
@@ -87,11 +91,17 @@ ConnectionManager::ConnectionManager()
   rawptr = static_cast<void *>(h);
 }
 
+//
+// destructor
+//
 ConnectionManager::~ConnectionManager()
 {
   delete static_cast<uWS::Hub *>(rawptr);
 }
 
+//
+// listen
+//
 void ConnectionManager::listen(uint16_t port)
 {
   auto h = static_cast<uWS::Hub *>(rawptr);
@@ -103,6 +113,9 @@ void ConnectionManager::listen(uint16_t port)
   }
 }
 
+//
+// event listtener
+//
 void ConnectionManager::set_listner_on_connect(Function<void(Sptr<Connection>)> cb)
 {
   cb_connect = cb;
