@@ -6,10 +6,12 @@
 #include <core/timer.h>
 #include <chrono>
 
-namespace CLGM2 {
+namespace CLGM2
+{
 
 Timer::Timer()
 {
+  reset();
 }
 
 Timer::~Timer()
@@ -29,16 +31,16 @@ void Timer::begin()
 //
 void Timer::reset()
 {
-  begin();
+  _ss = _ss - std::chrono::hours(24);
 }
 
 //
 // watch
-// return: us
+// return: ms
 //
-uint64_t Timer::watch()
+uint64_t Timer::watch_ms()
 {
-  return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - _ss).count();
+  return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - _ss).count();
 }
 
 //
@@ -63,7 +65,7 @@ void Timer::sleep_s(time_t _t)
 //
 void Timer::sleep_u(uint64_t _t)
 {
-  std::this_thread::sleep_for(std::chrono::microseconds(_t));  
+  std::this_thread::sleep_for(std::chrono::microseconds(_t));
 }
 
-}  // namespace CLGM
+} // namespace CLGM

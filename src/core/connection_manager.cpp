@@ -29,6 +29,7 @@ ConnectionManager::ConnectionManager()
     connection->rawptr = static_cast<void *>(ws);
     ws->setUserData(static_cast<void *>(connection.get()));
 
+    // callback
     if (cb_connect)
     {
       cb_connect(connection);
@@ -55,12 +56,27 @@ ConnectionManager::ConnectionManager()
   // onMessage
   h->onMessage([&](uWS::WebSocket<uWS::SERVER> *ws, char *message, size_t length, uWS::OpCode opCode) {
     auto connection = connections[static_cast<Connection *>(ws->getUserData())];
+    auto accept = true;
+    auto watch = connection->last_update.watch_ms();
 
-    if (opCode == uWS::OpCode::TEXT)
+    if (watch < 1000 / (Config::net_data_receive_rate))
     {
-      if (cb_message)
+      std::cout << "Too many request: elapsed " + std::to_string(watch) + "ms yet" << std::endl;
+      connection->send("{\"code\": 429}");
+      accept = false;
+    }
+
+    if (opCode != uWS::OpCode::TEXT)
+    {
+      std::cout << "Protocol Error" << std::endl;
+      connection->send("{\"code\": 400}");
+      accept = false;
+    }
+    {
+      if (accept && cb_message)
       {
         cb_message(connection, String(message).substr(0, length));
+        connection->last_update.begin();
       }
     }
   });
