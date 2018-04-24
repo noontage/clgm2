@@ -17,7 +17,8 @@ public:
   uint64_t watch_ms();
   uint64_t watch_s();
   static void sleep_s(time_t _t);
-  static void sleep_u(uint64_t _t);
+  static void sleep_ms(time_t _t);
+  static void sleep_us(uint64_t _t);
 };
 
 }  // namespace CLGM2

@@ -33,11 +33,28 @@ mrb_value rbf_event_on(mrb_state *mrb, mrb_value self)
   return self;
 }
 
+//
+// rbf_sleep
+//
 mrb_value rbf_sleep(mrb_state *mrb, mrb_value self)
 {
   mrb_int st;
-  mrb_get_args(mrb, "i", &st);
-  Timer::sleep_s(st);
+  mrb_sym type;
+  mrb_get_args(mrb, "i|n", &st, &type);
+
+  if (type == mrb_intern_lit(mrb, "ms"))
+  {
+    Timer::sleep_ms(st);
+  }
+  else if (type == mrb_intern_lit(mrb, "us"))
+  {
+    Timer::sleep_us(st);
+  }
+  else
+  {
+    Timer::sleep_s(st);
+  }
+
   return self;
 }
 

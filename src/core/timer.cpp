@@ -61,9 +61,17 @@ void Timer::sleep_s(time_t _t)
 }
 
 //
-//  sleep_s
+//  sleep_ms
 //
-void Timer::sleep_u(uint64_t _t)
+void Timer::sleep_ms(time_t _t)
+{
+  std::this_thread::sleep_for(std::chrono::milliseconds(_t));
+}
+
+//
+//  sleep_us
+//
+void Timer::sleep_us(uint64_t _t)
 {
   std::this_thread::sleep_for(std::chrono::microseconds(_t));
 }
