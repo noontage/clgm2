@@ -5,6 +5,9 @@ channel = Channel.new("Global")
 
 CLGM2::event_on(:connected) do |con|
   channel.join(con)
+  p con.class
+  con.hogehoge
+  con.send("ええで")
 end
 
 CLGM2::event_on(:disconnected) do |con|
@@ -15,19 +18,10 @@ CLGM2::event_on(:message) do |con, msg|
   channel.send("echo: #{msg}")
 end
 
-loop do
-  3.times do
-    puts "sec"
-    CLGM2::sleep(1)
-  end
-
-  3.times do
-    puts "1000ms"
-    CLGM2::sleep(1000, :ms)
-  end
-
-  3.times do
-    puts "1000000us"
-    CLGM2::sleep(1000000, :us)
+class Hoge < Connection
+  def hogehoge
+    puts "hogehoge"
   end
 end
+
+CLGM2::connection_class = Hoge

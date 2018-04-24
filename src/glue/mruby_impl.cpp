@@ -96,6 +96,42 @@ mrb_value rbf_connection_info(mrb_state *mrb, mrb_value self)
 }
 
 //
+// rbf_connection_class_eq
+//
+mrb_value rbf_connection_class_eq(mrb_state *mrb, mrb_value self)
+{
+  int ai = mrb_gc_arena_save(mrb);
+  // ---
+  auto VM = MRB::Tbl[mrb];
+  mrb_value rb_class;
+  mrb_get_args(mrb, "C", &rb_class);
+
+  // check kind of Class object
+  if (!mrb_obj_is_kind_of(mrb, rb_class, mrb->class_class))
+  {
+    mrb_raise(mrb, E_TYPE_ERROR, "wrong argument class");
+  }
+
+  // check kind of Connection object
+  if (!mrb_obj_is_kind_of(mrb, mrb_funcall(mrb, rb_class, "new", 0), mrb_class_get(mrb, "Connection")))
+  {
+    mrb_raise(mrb, E_TYPE_ERROR, "wrong argument class (require: kind of 'Connection' class)");
+  }
+
+  // GC unregister if before set custom connection class
+  if (!mrb_nil_p(VM->custom_connection_class))
+  {
+    mrb_gc_unregister(mrb, VM->custom_connection_class);
+  }
+  VM->custom_connection_class = rb_class;
+  mrb_gc_register(mrb, rb_class);
+
+  //---
+  mrb_gc_arena_restore(mrb, ai);
+  return self;
+}
+
+//
 // rbf_channel_init
 //
 mrb_value rbf_channel_init(mrb_state *mrb, mrb_value self)
@@ -200,6 +236,8 @@ void initialize(mrb_state *mrb)
   auto KCore = mrb_define_module(mrb, "CLGM2");
   mrb_define_class_method(mrb, KCore, "event_on", rbf_event_on, MRB_ARGS_REQ(2));
   mrb_define_class_method(mrb, KCore, "sleep", rbf_sleep, MRB_ARGS_REQ(1));
+  mrb_define_class_method(mrb, KCore, "connection_class=", rbf_connection_class_eq, MRB_ARGS_REQ(1));
+
   // mrb_define_class_method(mrb, KCore, "fullgc", rb_fullgc, MRB_ARGS_NONE());
   // mrb_define_class_method(mrb, KCore, "shutdown", rb_shutdown, MRB_ARGS_NONE());
 
@@ -213,7 +251,7 @@ void initialize(mrb_state *mrb)
   mrb_define_method(mrb, MRB::Tbl[mrb]->KChannel, "initialize", rbf_channel_init, MRB_ARGS_REQ(1));
   mrb_define_method(mrb, MRB::Tbl[mrb]->KChannel, "initialize_copy", rbf_channel_init_copy, MRB_ARGS_NONE());
   mrb_define_method(mrb, MRB::Tbl[mrb]->KChannel, "join", rbf_channel_join, MRB_ARGS_REQ(1));
-  mrb_define_method(mrb, MRB::Tbl[mrb]->KChannel, "leave", rbf_connection_send, MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, MRB::Tbl[mrb]->KChannel, "leave", rbf_channel_leave, MRB_ARGS_REQ(1));
   mrb_define_method(mrb, MRB::Tbl[mrb]->KChannel, "name", rbf_channel_name, MRB_ARGS_NONE());
   mrb_define_method(mrb, MRB::Tbl[mrb]->KChannel, "send", rbf_channel_send, MRB_ARGS_REQ(1));
 
