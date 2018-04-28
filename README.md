@@ -1,12 +1,12 @@
-# CLGM2 Core
+# CLGM
 
-The lightweight Websocket Server on mruby.
+Lightweight WebSocket Server on mruby.
 
 
-### Installing
+### Install
 
 ```
-make
+make production
 ```
 
 
@@ -17,7 +17,9 @@ Is released under the MIT License.
 
 ## Requirement Library
 
-- CMake
+CMake
+And, this software is dependent uWebSocket library so need a related library is as follows.
+
 - OpenSSL
 - Zlib
 

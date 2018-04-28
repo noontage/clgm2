@@ -1,25 +1,26 @@
-channel = CLGM2::Channel.new("Global")
+#
+# Sample
+#
+include CLGM2
+
+@robby = Channel.new("Robby")
+
 CLGM2::event_on(:connected) do |con|
-  channel.join(con)
-  p con.class
-  con.hogehoge
-  con.send("ええで")
+  @robby.join(con)
+  con.connected_date = Time.now
 end
 
 CLGM2::event_on(:disconnected) do |con|
-  #channel.leave(con)
+  @robby.leave(con)
 end
 
 CLGM2::event_on(:message) do |con, msg|
-  channel.send("echo: #{msg}")
-  CLGM2::sleep 3
+  @robby.send(msg)
 end
 
-class Hoge < CLGM2::Connection
-  def hogehoge
-    puts "hogehoge"
-  end
+class User < Connection
+  attr_accessor :connected_date
 end
 
-CLGM2::ConnectionManager::connection_class = Hoge
-CLGM2::ConnectionManager::listen 3000
+ConnectionManager::connection_class = User
+ConnectionManager::listen(3000)
