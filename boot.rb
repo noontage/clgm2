@@ -1,9 +1,4 @@
-
-p "Ruby!"
-
-channel = Channel.new("Global")
-Channel.new("Global")
-
+channel = CLGM2::Channel.new("Global")
 CLGM2::event_on(:connected) do |con|
   channel.join(con)
   p con.class
@@ -12,27 +7,19 @@ CLGM2::event_on(:connected) do |con|
 end
 
 CLGM2::event_on(:disconnected) do |con|
-  channel.leave(con)
+  #channel.leave(con)
 end
 
 CLGM2::event_on(:message) do |con, msg|
   channel.send("echo: #{msg}")
+  CLGM2::sleep 3
 end
 
-class Hoge < Connection
+class Hoge < CLGM2::Connection
   def hogehoge
     puts "hogehoge"
   end
 end
 
-CLGM2::connection_class = Hoge
-
-# CLGM2::sleep 10
-# 200000.times do
-#   Channel.new("yesman")
-# end
-# CLGM2::fullgc
-# #sp "waiting..."
-# #CLGM2::sleep 10
-# puts "created"
-#
+CLGM2::ConnectionManager::connection_class = Hoge
+CLGM2::ConnectionManager::listen 3000

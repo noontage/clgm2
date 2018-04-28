@@ -6,9 +6,8 @@ namespace CLGM2
 namespace Util
 {
 
-bool apply_by_yamlfile(const String &filename)
+void set_config_from_jsonfile(const String &filename)
 {
-  return false;
 }
 
 } // namespace Util

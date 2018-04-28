@@ -32,14 +32,14 @@ MRB::~MRB()
 //
 // exec_script
 //
-bool MRB::exec_script(const String &f)
+int MRB::exec_script(const String &f)
 {
   // loadfile
   FILE *mrb_file;
   if ((mrb_file = fopen(f.c_str(), "r")) == nullptr)
   {
     fclose(mrb_file);
-    return false;
+    return 1;
   }
   auto parser_state = mrb_parse_file(mrb, mrb_file, nullptr);
   fclose(mrb_file);
@@ -49,13 +49,16 @@ bool MRB::exec_script(const String &f)
   if (rproc == nullptr)
   {
     mrb_pool_close(parser_state->pool);
-    return false;
+    return 1;
   }
   mrb_pool_close(parser_state->pool);
 
   // run
   mrb_run(mrb, rproc, mrb_top_self(mrb));
-  return is_error();
+  if(is_error()){
+    return 1;
+  }
+  return 0;
 }
 
 bool MRB::is_error()

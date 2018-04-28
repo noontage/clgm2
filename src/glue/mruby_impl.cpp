@@ -90,7 +90,6 @@ mrb_value rbf_connection_info(mrb_state *mrb, mrb_value self)
   auto connection = MRB::Tbl[mrb]->tbl_connections.get(self);
   if (connection == nullptr)
   {
-    printf("not found");
     return mrb_nil_value();
   }
   mrb_value hash = mrb_hash_new_capa(mrb, 4);
@@ -102,10 +101,14 @@ mrb_value rbf_connection_info(mrb_state *mrb, mrb_value self)
   return hash;
 }
 
+/**************************************************************************************************************************************
+ * ConnectionManager
+ **************************************************************************************************************************************/
+
 //
-// rbf_connection_class_eq
+// rbf_cm_connection_class_eq
 //
-mrb_value rbf_connection_class_eq(mrb_state *mrb, mrb_value self)
+mrb_value rbf_cm_connection_class_eq(mrb_state *mrb, mrb_value self)
 {
   auto VM = MRB::Tbl[mrb];
   mrb_value rb_class;
@@ -118,9 +121,9 @@ mrb_value rbf_connection_class_eq(mrb_state *mrb, mrb_value self)
   }
 
   // check kind of Connection object
-  if (!mrb_obj_is_kind_of(mrb, mrb_funcall(mrb, rb_class, "new", 0), mrb_class_get(mrb, "Connection")))
+  if (!mrb_obj_is_kind_of(mrb, mrb_funcall(mrb, rb_class, "new", 0), mrb_class_get_under(mrb, MRB::Tbl[mrb]->KCore, "Connection")))
   {
-    mrb_raise(mrb, E_TYPE_ERROR, "wrong argument class (require: kind of 'Connection' class)");
+    mrb_raise(mrb, E_TYPE_ERROR, "wrong argument class (require: kind of 'CLGM2::Connection' class)");
   }
 
   // GC unregister if before set custom connection class
@@ -130,6 +133,38 @@ mrb_value rbf_connection_class_eq(mrb_state *mrb, mrb_value self)
   }
   VM->custom_connection_class = rb_class;
   mrb_gc_register(mrb, rb_class);
+
+  return self;
+}
+
+//
+// rbf_cm_listen
+//
+mrb_value rbf_cm_listen(mrb_state *mrb, mrb_value self)
+{
+  mrb_int port;
+  mrb_int type;
+  mrb_get_args(mrb, "i|n", &port, &type);
+
+  if (port > 0 && port < 65536)
+  {
+    auto VM = MRB::Tbl[mrb];
+    std::thread th_net([&]() {
+      VM->connection_manager->listen(port);
+    });
+    if (type == mrb_intern_lit(mrb, "no_blocking"))
+    {
+      th_net.detach();
+    }
+    else
+    {
+      th_net.join();
+    }
+  }
+  else
+  {
+    mrb_raise(mrb, E_ARGUMENT_ERROR, "wrong argument range of number");
+  }
 
   return self;
 }
@@ -240,31 +275,37 @@ void initialize(mrb_state *mrb)
 {
   // Core
   auto KCore = mrb_define_module(mrb, "CLGM2");
+  MRB::Tbl[mrb]->KCore = KCore;
   mrb_define_class_method(mrb, KCore, "event_on", rbf_event_on, MRB_ARGS_REQ(2));
   mrb_define_class_method(mrb, KCore, "sleep", rbf_sleep, MRB_ARGS_REQ(1));
-  mrb_define_class_method(mrb, KCore, "connection_class=", rbf_connection_class_eq, MRB_ARGS_REQ(1));
   mrb_define_class_method(mrb, KCore, "fullgc", rbf_fullgc, MRB_ARGS_NONE());
-  // mrb_define_class_method(mrb, KCore, "shutdown", rb_shutdown, MRB_ARGS_NONE());
+  //mrb_define_const(mrb, KCore, "Environment", mrb_str_new(mrb, "", 0));
+  mrb_define_const(mrb, KCore, "VERSION", mrb_str_new(mrb, Version::Pretty.c_str(), Version::Pretty.length()));
   MRB_SET_INSTANCE_TT(KCore, MRB_TT_DATA); // for GC
 
+  // ConnectionManager
+  auto KConnectionManager = mrb_define_class_under(mrb, KCore, "ConnectionManager", mrb->object_class);
+  MRB::Tbl[mrb]->KConnectionManager = KConnectionManager;
+  mrb_define_class_method(mrb, KConnectionManager, "connection_class=", rbf_cm_connection_class_eq, MRB_ARGS_REQ(1));
+  mrb_define_class_method(mrb, KConnectionManager, "listen", rbf_cm_listen, MRB_ARGS_REQ(1));
+
   // Connection
-  MRB::Tbl[mrb]->KConnection = mrb_define_class(mrb, "Connection", mrb->object_class);
-  mrb_define_method(mrb, MRB::Tbl[mrb]->KConnection, "send", rbf_connection_send, MRB_ARGS_REQ(1));
-  mrb_define_method(mrb, MRB::Tbl[mrb]->KConnection, "info", rbf_connection_info, MRB_ARGS_NONE());
-  MRB_SET_INSTANCE_TT(MRB::Tbl[mrb]->KConnection, MRB_TT_DATA); // for GC
+  auto KConnection = mrb_define_class_under(mrb, KCore, "Connection", mrb->object_class);
+  MRB::Tbl[mrb]->KConnection = KConnection;
+  mrb_define_method(mrb, KConnection, "send", rbf_connection_send, MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, KConnection, "info", rbf_connection_info, MRB_ARGS_NONE());
+  MRB_SET_INSTANCE_TT(KConnection, MRB_TT_DATA); // for GC
 
   // Channel
-  MRB::Tbl[mrb]->KChannel = mrb_define_class(mrb, "Channel", mrb->object_class);
-  mrb_define_method(mrb, MRB::Tbl[mrb]->KChannel, "initialize", rbf_channel_init, MRB_ARGS_REQ(1));
-  mrb_define_method(mrb, MRB::Tbl[mrb]->KChannel, "initialize_copy", rbf_channel_init_copy, MRB_ARGS_NONE());
-  mrb_define_method(mrb, MRB::Tbl[mrb]->KChannel, "join", rbf_channel_join, MRB_ARGS_REQ(1));
-  mrb_define_method(mrb, MRB::Tbl[mrb]->KChannel, "leave", rbf_channel_leave, MRB_ARGS_REQ(1));
-  mrb_define_method(mrb, MRB::Tbl[mrb]->KChannel, "name", rbf_channel_name, MRB_ARGS_NONE());
-  mrb_define_method(mrb, MRB::Tbl[mrb]->KChannel, "send", rbf_channel_send, MRB_ARGS_REQ(1));
-  MRB_SET_INSTANCE_TT(MRB::Tbl[mrb]->KChannel, MRB_TT_DATA); // for GC
-
-  // Constant
-  mrb_define_const(mrb, KCore, "Environment", mrb_str_new(mrb, "", 0));
+  auto KChannel = mrb_define_class_under(mrb, KCore, "Channel", mrb->object_class);
+  MRB::Tbl[mrb]->KChannel = KChannel;
+  mrb_define_method(mrb, KChannel, "initialize", rbf_channel_init, MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, KChannel, "initialize_copy", rbf_channel_init_copy, MRB_ARGS_NONE());
+  mrb_define_method(mrb, KChannel, "join", rbf_channel_join, MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, KChannel, "leave", rbf_channel_leave, MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, KChannel, "name", rbf_channel_name, MRB_ARGS_NONE());
+  mrb_define_method(mrb, KChannel, "send", rbf_channel_send, MRB_ARGS_REQ(1));
+  MRB_SET_INSTANCE_TT(KChannel, MRB_TT_DATA); // for GC
 }
 
 } // RubyFunction

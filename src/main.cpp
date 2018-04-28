@@ -6,6 +6,7 @@ int main()
 {
   auto cm = std::make_shared<ConnectionManager>();
   auto VM = std::make_shared<MRB>();
+  VM->connection_manager = cm;
 
   cm->cb_connect = ([&](Sptr<Connection> con) {
     // create 'Connection' class
@@ -37,14 +38,8 @@ int main()
     VM->tbl_connections.remove(con);
   });
 
-  std::thread th_net([&]() {
-    cm->listen(3000);
-  });
-
-  if (VM->exec_script("boot.rb"))
-  {
-    th_net.join();
+  if(VM->exec_script("boot.rb") == 0){
+    exit(0);
   }
-
   exit(1);
 }

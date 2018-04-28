@@ -50,4 +50,16 @@ namespace Config
 const uint64_t net_data_receive_rate = 60; //  60update per second
 }
 
+//
+// Version
+//
+namespace Version
+{
+const String Name = "CLGM";
+const int Major = 2;
+const int Minor = 0;
+const String Type = "dev"; // 'dev' / 'stable' / 'beta' / 'rc'
+const String Pretty = "" + Name + " " + std::to_string(Major) + "." + std::to_string(Minor) + " " + Type;
+}
+
 } // namespace CLGM2

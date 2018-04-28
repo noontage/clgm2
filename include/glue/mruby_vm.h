@@ -29,10 +29,8 @@ struct MRB
   mrb_state *mrb;
 
   // Table
-  // Table Shared_ptr<Connection> <=> mrb_value
-  SPTable<Connection, mrb_value, _mrb_value_hash, _mrb_value_eq> tbl_connections;
-  // Table Shared_ptr<Channel>    <=> mrb_value
-  SPTable<Channel, mrb_value, _mrb_value_hash, _mrb_value_eq> tbl_channels;
+  SPTable<Connection, mrb_value, _mrb_value_hash, _mrb_value_eq> tbl_connections; // Table Shared_ptr<Connection> <=> mrb_value
+  SPTable<Channel, mrb_value, _mrb_value_hash, _mrb_value_eq> tbl_channels; // Table Shared_ptr<Channel>    <=> mrb_value
 
   //  custon 'Connection' ruby class
   mrb_value custom_connection_class;
@@ -49,7 +47,9 @@ struct MRB
   Hash<mrb_sym, mrb_value> rb_core_event_proc;
   RClass *KCore;
   RClass *KConnection;
+  RClass *KConnectionManager;
   RClass *KChannel;
+  Sptr<ConnectionManager> connection_manager;
 
   //
   // obj_new
@@ -95,7 +95,7 @@ struct MRB
   MRB();
   ~MRB();
   void initialize();
-  bool exec_script(const String &f);
+  int exec_script(const String &f);
   bool is_error();
 };
 
