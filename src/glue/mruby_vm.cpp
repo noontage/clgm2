@@ -12,10 +12,10 @@ MRB::MRB()
 {
   mrb = mrb_open();
   Tbl[mrb] = this;
+  custom_connection_class = mrb_nil_value();
   // ----------- ARENA BEGN  -----------
   int ai = mrb_gc_arena_save(mrb);
   initialize();
-  custom_connection_class = mrb_nil_value();
   mrb_gc_arena_restore(mrb, ai);
   // ----------- ARENA END  -----------
 }
@@ -55,11 +55,7 @@ bool MRB::exec_script(const String &f)
 
   // run
   mrb_run(mrb, rproc, mrb_top_self(mrb));
-  if (is_error())
-  {
-    return false;
-  }
-  return true;
+  return is_error();
 }
 
 bool MRB::is_error()

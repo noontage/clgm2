@@ -58,11 +58,9 @@ struct MRB
   template <class T>
   mrb_value obj_new(RClass *klass, const mrb_data_type *type, T p)
   {
-    int ai = mrb_gc_arena_save(mrb);
     mrb_value value = mrb_obj_new(mrb, klass, 0, NULL);
     DATA_PTR(value) = p;
     DATA_TYPE(value) = type;
-    mrb_gc_arena_restore(mrb, ai);
     return value;
   }
 
@@ -75,6 +73,7 @@ struct MRB
     mrb_value ret;
     int ai = mrb_gc_arena_save(mrb);
     mrb_value rb_event = rb_core_event_proc[mrb_intern_static(mrb, event.c_str(), event.length())];
+    mrb_gc_arena_restore(mrb, ai);
     if (!mrb_nil_p(rb_event))
     {
       ret = mrb_funcall(mrb, rb_event, "call", sizeof...(args), args...);
@@ -87,7 +86,6 @@ struct MRB
     {
       std::cout << "Not defined: " + event << std::endl;
     }
-    mrb_gc_arena_restore(mrb, ai);
     return ret;
   }
 

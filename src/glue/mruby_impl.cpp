@@ -11,11 +11,9 @@ namespace CLGM2
 namespace MRubyImpl
 {
 
-//
-// Data Type
-//
-void rbf_channel_fin(mrb_state *mrb, void *p);
-const mrb_data_type DS_CHANNEL = {"Channel", rbf_channel_fin};
+/**************************************************************************************************************************************
+ * Core
+ **************************************************************************************************************************************/
 
 //
 // rbf_event_on
@@ -59,6 +57,19 @@ mrb_value rbf_sleep(mrb_state *mrb, mrb_value self)
 }
 
 //
+// rbf_fullgc
+//
+mrb_value rbf_fullgc(mrb_state *mrb, mrb_value self)
+{
+  mrb_full_gc(mrb);
+  return self;
+}
+
+/**************************************************************************************************************************************
+ * Connection
+ **************************************************************************************************************************************/
+
+//
 // rbf_connection_send
 //
 mrb_value rbf_connection_send(mrb_state *mrb, mrb_value self)
@@ -76,8 +87,6 @@ mrb_value rbf_connection_send(mrb_state *mrb, mrb_value self)
 //
 mrb_value rbf_connection_info(mrb_state *mrb, mrb_value self)
 {
-  int ai = mrb_gc_arena_save(mrb);
-  //---
   auto connection = MRB::Tbl[mrb]->tbl_connections.get(self);
   if (connection == nullptr)
   {
@@ -90,8 +99,6 @@ mrb_value rbf_connection_info(mrb_state *mrb, mrb_value self)
   mrb_hash_set(mrb, hash, mrb_str_new(mrb, "host", 4), mrb_str_new(mrb, connection->request.host.c_str(), connection->request.host.size()));
   mrb_hash_set(mrb, hash, mrb_str_new(mrb, "origin", 6), mrb_str_new(mrb, connection->request.origin.c_str(), connection->request.origin.size()));
   mrb_hash_set(mrb, hash, mrb_str_new(mrb, "user_agent", 10), mrb_str_new(mrb, connection->request.user_agent.c_str(), connection->request.user_agent.size()));
-  //---
-  mrb_gc_arena_restore(mrb, ai);
   return hash;
 }
 
@@ -100,8 +107,6 @@ mrb_value rbf_connection_info(mrb_state *mrb, mrb_value self)
 //
 mrb_value rbf_connection_class_eq(mrb_state *mrb, mrb_value self)
 {
-  int ai = mrb_gc_arena_save(mrb);
-  // ---
   auto VM = MRB::Tbl[mrb];
   mrb_value rb_class;
   mrb_get_args(mrb, "C", &rb_class);
@@ -126,10 +131,12 @@ mrb_value rbf_connection_class_eq(mrb_state *mrb, mrb_value self)
   VM->custom_connection_class = rb_class;
   mrb_gc_register(mrb, rb_class);
 
-  //---
-  mrb_gc_arena_restore(mrb, ai);
   return self;
 }
+
+/**************************************************************************************************************************************
+ * Channel
+ **************************************************************************************************************************************/
 
 //
 // rbf_channel_init
@@ -139,24 +146,13 @@ mrb_value rbf_channel_init(mrb_state *mrb, mrb_value self)
   DATA_TYPE(self) = &DS_CHANNEL;
   DATA_PTR(self) = nullptr;
 
-  int ai = mrb_gc_arena_save(mrb);
   //---
   char *room_name;
   mrb_get_args(mrb, "z", &room_name);
   DATA_PTR(self) = new Channel(String(room_name));
   //---
-  mrb_gc_arena_restore(mrb, ai);
 
   return self;
-}
-
-//
-// rbf_channel_fin
-//
-void rbf_channel_fin(mrb_state *mrb, void *p)
-{
-  auto p_channel = static_cast<Channel *>(p);
-  delete p_channel;
 }
 
 //
@@ -166,6 +162,16 @@ mrb_value rbf_channel_init_copy(mrb_state *mrb, mrb_value copy)
 {
   mrb_raise(mrb, E_RUNTIME_ERROR, "This object not permited to duplicate");
   return copy;
+}
+
+//
+// rbf_channel_fin
+//
+void rbf_channel_fin(mrb_state *mrb, void *p)
+{
+  auto p_channel = static_cast<Channel *>(p);
+  std::cout << "Channel: Ruby<Channel:" + String(p_channel->name) + "> deleted" << std::endl;
+  delete p_channel;
 }
 
 //
@@ -237,14 +243,15 @@ void initialize(mrb_state *mrb)
   mrb_define_class_method(mrb, KCore, "event_on", rbf_event_on, MRB_ARGS_REQ(2));
   mrb_define_class_method(mrb, KCore, "sleep", rbf_sleep, MRB_ARGS_REQ(1));
   mrb_define_class_method(mrb, KCore, "connection_class=", rbf_connection_class_eq, MRB_ARGS_REQ(1));
-
-  // mrb_define_class_method(mrb, KCore, "fullgc", rb_fullgc, MRB_ARGS_NONE());
+  mrb_define_class_method(mrb, KCore, "fullgc", rbf_fullgc, MRB_ARGS_NONE());
   // mrb_define_class_method(mrb, KCore, "shutdown", rb_shutdown, MRB_ARGS_NONE());
+  MRB_SET_INSTANCE_TT(KCore, MRB_TT_DATA); // for GC
 
   // Connection
   MRB::Tbl[mrb]->KConnection = mrb_define_class(mrb, "Connection", mrb->object_class);
   mrb_define_method(mrb, MRB::Tbl[mrb]->KConnection, "send", rbf_connection_send, MRB_ARGS_REQ(1));
   mrb_define_method(mrb, MRB::Tbl[mrb]->KConnection, "info", rbf_connection_info, MRB_ARGS_NONE());
+  MRB_SET_INSTANCE_TT(MRB::Tbl[mrb]->KConnection, MRB_TT_DATA); // for GC
 
   // Channel
   MRB::Tbl[mrb]->KChannel = mrb_define_class(mrb, "Channel", mrb->object_class);
@@ -254,6 +261,7 @@ void initialize(mrb_state *mrb)
   mrb_define_method(mrb, MRB::Tbl[mrb]->KChannel, "leave", rbf_channel_leave, MRB_ARGS_REQ(1));
   mrb_define_method(mrb, MRB::Tbl[mrb]->KChannel, "name", rbf_channel_name, MRB_ARGS_NONE());
   mrb_define_method(mrb, MRB::Tbl[mrb]->KChannel, "send", rbf_channel_send, MRB_ARGS_REQ(1));
+  MRB_SET_INSTANCE_TT(MRB::Tbl[mrb]->KChannel, MRB_TT_DATA); // for GC
 
   // Constant
   mrb_define_const(mrb, KCore, "Environment", mrb_str_new(mrb, "", 0));
